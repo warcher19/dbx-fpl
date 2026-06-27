@@ -41,5 +41,4 @@ job:
         node_type_id: ${var.node_type_id}
         num_workers: 1
         spark_env_vars:
-          LANDING_ZONE_PATH: "${var.landing_zone_path}"
           FPL_API_BASE_URL: "https://fantasy.premierleague.com/api/"

@@ -1,6 +1,5 @@
 -- FPL Unity Catalog Setup
 -- Run once as a workspace admin before deploying the DAB bundle.
--- Replace <storage_account> with your ADLS Gen2 storage account name.
 
 CREATE CATALOG IF NOT EXISTS fpl
   COMMENT 'Fantasy Premier League analytics platform';
@@ -14,13 +13,12 @@ CREATE SCHEMA IF NOT EXISTS fpl.silver
 CREATE SCHEMA IF NOT EXISTS fpl.gold
   COMMENT 'Business-level aggregations and FPL analytics metrics';
 
--- Volume for Auto Loader schema inference metadata and checkpoints
+-- Landing zone: FPL API JSON drops and vaastav historical CSVs
+-- Path: /Volumes/fpl/bronze/landing/
+CREATE VOLUME IF NOT EXISTS fpl.bronze.landing
+  COMMENT 'Landing zone for FPL API JSON drops and vaastav historical CSVs';
+
+-- Auto Loader schema inference metadata and checkpoints
+-- Path: /Volumes/fpl/bronze/autoloader_meta/
 CREATE VOLUME IF NOT EXISTS fpl.bronze.autoloader_meta
   COMMENT 'Auto Loader schema tracking for bronze ingestion streams';
-
--- External location for the API + historical landing zone
--- Uncomment and configure once storage credential is set up:
--- CREATE EXTERNAL LOCATION IF NOT EXISTS fpl_landing
---   URL 'abfss://fpl-landing@<storage_account>.dfs.core.windows.net/'
---   WITH (STORAGE CREDENTIAL <credential_name>)
---   COMMENT 'Landing zone for FPL API JSON drops and vaastav historical CSVs';

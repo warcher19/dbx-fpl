@@ -9,9 +9,7 @@ landing zone by scripts/download_vaastav_history.py before the first run.
 """
 from pyspark import pipelines as dp
 from pyspark.sql.functions import current_timestamp, col, regexp_extract
-import os
-
-LANDING = os.getenv("LANDING_ZONE_PATH", "abfss://fpl-landing@<storage_account>.dfs.core.windows.net")
+LANDING = "/Volumes/fpl/bronze/landing"
 SCHEMA_LOC = "/Volumes/fpl/bronze/autoloader_meta/historical"
 
 # Shell table — populated exclusively by the backfill flow below

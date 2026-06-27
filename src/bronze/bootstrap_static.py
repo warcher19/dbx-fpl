@@ -1,8 +1,6 @@
 from pyspark import pipelines as dp
 from pyspark.sql.functions import current_timestamp, col
-import os
-
-LANDING = os.getenv("LANDING_ZONE_PATH", "abfss://fpl-landing@<storage_account>.dfs.core.windows.net")
+LANDING = "/Volumes/fpl/bronze/landing"
 SCHEMA_LOC = "/Volumes/fpl/bronze/autoloader_meta/bootstrap"
 
 

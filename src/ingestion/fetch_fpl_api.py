@@ -2,37 +2,36 @@
 FPL API ingestion script — adapted from the existing api_calls.py.
 
 Fetches bootstrap-static, element-summary (all players), and fixtures
-from the FPL API and uploads JSON snapshots to the ADLS landing zone.
+from the FPL API and writes JSON snapshots directly to the UC Volume
+landing zone at /Volumes/fpl/bronze/landing/.
 
-Runs as Task 1 in the fpl_api_ingestion Workflow job.
-Requires env vars:
-  - LANDING_ZONE_PATH : ADLS base path (e.g. abfss://fpl-landing@...)
-  - FPL_API_BASE_URL  : https://fantasy.premierleague.com/api/
-  - AZURE_STORAGE_CONNECTION_STRING or AZURE_CLIENT_ID/SECRET/TENANT for auth
+Runs as Task 1 in the fpl_api_ingestion Workflow job on Databricks.
+The Volume path is accessible as a standard filesystem path on any
+Databricks cluster or serverless context — no storage SDK required.
+
+Requires env var:
+  - FPL_API_BASE_URL : https://fantasy.premierleague.com/api/
 """
 import asyncio
 import json
 import os
 from datetime import datetime, timezone
+from pathlib import Path
 
 import aiohttp
 import requests
-from azure.storage.blob import BlobServiceClient
 
-BASE_URL = os.environ["FPL_API_BASE_URL"]
-LANDING = os.environ["LANDING_ZONE_PATH"]
+BASE_URL  = os.environ.get("FPL_API_BASE_URL", "https://fantasy.premierleague.com/api/")
+LANDING   = Path("/Volumes/fpl/bronze/landing")
 TIMESTAMP = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H%M%SZ")
 
-blob_client = BlobServiceClient.from_connection_string(
-    os.environ["AZURE_STORAGE_CONNECTION_STRING"]
-)
 
-
-def _upload(container: str, blob_path: str, data: bytes) -> None:
-    """Upload bytes to ADLS Gen2 via the Blob SDK."""
-    client = blob_client.get_blob_client(container=container, blob=blob_path)
-    client.upload_blob(data, overwrite=True)
-    print(f"Uploaded: {blob_path}")
+def _write(sub_path: str, data: bytes) -> None:
+    """Write bytes to a path under the UC Volume landing zone."""
+    dest = LANDING / sub_path
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(data)
+    print(f"Written: {dest}")
 
 
 def fetch_bootstrap() -> dict:
@@ -67,13 +66,10 @@ async def fetch_all_elements(element_ids: list) -> list:
 
 
 def main():
-    container = "fpl-landing"
-
     # 1. Bootstrap-static
     print("Fetching bootstrap-static...")
     bootstrap = fetch_bootstrap()
-    _upload(
-        container,
+    _write(
         f"bootstrap-static/bootstrap-static_{TIMESTAMP}.json",
         json.dumps(bootstrap).encode(),
     )
@@ -81,8 +77,7 @@ def main():
     # 2. Fixtures
     print("Fetching fixtures...")
     fixtures = fetch_fixtures()
-    _upload(
-        container,
+    _write(
         f"fixtures/fixtures_{TIMESTAMP}.json",
         json.dumps(fixtures).encode(),
     )
@@ -92,14 +87,12 @@ def main():
     print(f"Fetching {len(element_ids)} element summaries...")
     results = asyncio.run(fetch_all_elements(element_ids))
 
-    # Bundle all element results into a single JSON array per snapshot
     payload = [{"element_id": eid, **data} for eid, data in results if data is not None]
-    _upload(
-        container,
+    _write(
         f"element-data/element_data_{TIMESTAMP}.json",
         json.dumps(payload).encode(),
     )
-    print(f"Done — uploaded {len(payload)} element summaries.")
+    print(f"Done — written {len(payload)} element summaries.")
 
 
 if __name__ == "__main__":

@@ -41,5 +41,4 @@ pipeline:
         path: src/gold/vw_fpl_scout.py
 
   configuration:
-    LANDING_ZONE_PATH: "${var.landing_zone_path}"
     spark.databricks.delta.schema.autoMerge.enabled: "true"
