@@ -1,0 +1,45 @@
+pipeline:
+  name: fpl_medallion
+  description: "FPL Medallion Architecture — Bronze Auto Loader → Silver Auto CDC → Gold Materialized Views"
+
+  serverless: true
+  channel: CURRENT
+
+  catalog: fpl
+  schema: silver
+
+  libraries:
+    - file:
+        path: src/bronze/bootstrap_static.py
+    - file:
+        path: src/bronze/element_data.py
+    - file:
+        path: src/bronze/fixtures.py
+    - file:
+        path: src/bronze/historical_gw_raw.py
+    - file:
+        path: src/silver/dim_player.py
+    - file:
+        path: src/silver/dim_team.py
+    - file:
+        path: src/silver/dim_fixture.py
+    - file:
+        path: src/silver/fact_player_performance.py
+    - file:
+        path: src/silver/fact_historical_performance.py
+    - file:
+        path: src/gold/dim_player.py
+    - file:
+        path: src/gold/dim_team.py
+    - file:
+        path: src/gold/dim_fixture.py
+    - file:
+        path: src/gold/fact_gameweek_performance.py
+    - file:
+        path: src/gold/fact_season_totals.py
+    - file:
+        path: src/gold/vw_fpl_scout.py
+
+  configuration:
+    LANDING_ZONE_PATH: "${var.landing_zone_path}"
+    spark.databricks.delta.schema.autoMerge.enabled: "true"

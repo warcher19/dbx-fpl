@@ -1,0 +1,45 @@
+job:
+  name: fpl_api_ingestion
+  description: "Fetch latest FPL API data → upload to landing zone → trigger fpl_medallion pipeline update"
+
+  schedule:
+    quartz_cron_expression: "0 0 8 ? * TUE,THU,SAT *"
+    timezone_id: UTC
+    pause_status: UNPAUSED
+
+  email_notifications:
+    on_failure:
+      - willdataarcher@gmail.com
+
+  tasks:
+    - task_key: fetch_api_data
+      description: "Call FPL API endpoints and upload JSON snapshots to ADLS landing zone"
+      python_wheel_task:
+        package_name: fpl_genbi_advisor
+        entry_point: fetch_fpl_api
+      libraries:
+        - pypi:
+            package: aiohttp>=3.8.0
+        - pypi:
+            package: requests>=2.28.0
+        - pypi:
+            package: azure-storage-blob>=12.0.0
+      job_cluster_key: ingestion_cluster
+
+    - task_key: trigger_pipeline_update
+      description: "Start a triggered update of the fpl_medallion pipeline"
+      depends_on:
+        - task_key: fetch_api_data
+      pipeline_task:
+        pipeline_id: ${resources.pipelines.fpl_medallion.id}
+        full_refresh: false
+
+  job_clusters:
+    - job_cluster_key: ingestion_cluster
+      new_cluster:
+        spark_version: 15.4.x-scala2.12
+        node_type_id: ${var.node_type_id}
+        num_workers: 1
+        spark_env_vars:
+          LANDING_ZONE_PATH: "${var.landing_zone_path}"
+          FPL_API_BASE_URL: "https://fantasy.premierleague.com/api/"

@@ -1,0 +1,40 @@
+bundle:
+  name: dbx-fpl
+
+variables:
+  landing_zone_path:
+    description: "ADLS landing zone base path for API JSON and historical CSVs"
+    default: "abfss://fpl-landing@<storage_account>.dfs.core.windows.net"
+  catalog:
+    description: "Unity Catalog catalog name"
+    default: fpl
+  node_type_id:
+    description: "VM type for job clusters (not used — serverless preferred)"
+    default: "Standard_DS3_v2"
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      profile: will-free-env
+    variables:
+      landing_zone_path: "abfss://fpl-landing@<storage_account>.dfs.core.windows.net/dev"
+
+  prod:
+    mode: production
+    workspace:
+      profile: will-free-env
+    variables:
+      landing_zone_path: "abfss://fpl-landing@<storage_account>.dfs.core.windows.net/prod"
+
+resources:
+  pipelines:
+    fpl_medallion:
+      $ref: resources/fpl_pipeline.pipeline.yml
+
+  jobs:
+    fpl_api_ingestion:
+      $ref: resources/fpl_api_ingestion.job.yml
+    fpl_model_retrain:
+      $ref: resources/fpl_model_retrain.job.yml

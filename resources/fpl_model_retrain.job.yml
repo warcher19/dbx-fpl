@@ -1,0 +1,46 @@
+job:
+  name: fpl_model_retrain
+  description: "Weekly LSTM retraining from Gold tables → MLflow → Model Serving promotion"
+
+  schedule:
+    quartz_cron_expression: "0 0 6 ? * MON *"
+    timezone_id: UTC
+    pause_status: UNPAUSED
+
+  email_notifications:
+    on_failure:
+      - willdataarcher@gmail.com
+
+  tasks:
+    - task_key: lstm_training
+      description: "Train LSTM model on fpl.gold.fact_gameweek_performance and log to MLflow"
+      notebook_task:
+        notebook_path: notebooks/lstm_training
+        source: WORKSPACE
+      job_cluster_key: ml_cluster
+      libraries:
+        - pypi:
+            package: tensorflow>=2.20.0
+        - pypi:
+            package: scikit-learn>=1.7.2
+        - pypi:
+            package: mlflow>=2.0.0
+
+    - task_key: promote_champion_model
+      description: "Set 'champion' alias on the newly trained model version in Unity Catalog"
+      depends_on:
+        - task_key: lstm_training
+      python_wheel_task:
+        package_name: fpl_genbi_advisor
+        entry_point: promote_model
+      job_cluster_key: ml_cluster
+
+  job_clusters:
+    - job_cluster_key: ml_cluster
+      new_cluster:
+        spark_version: 15.4.x-gpu-ml-scala2.12
+        node_type_id: Standard_NC6s_v3
+        num_workers: 1
+        spark_env_vars:
+          MLFLOW_EXPERIMENT_NAME: "/fpl/lstm_points_predictor"
+          MODEL_NAME: "fpl.gold.lstm_points_predictor"
