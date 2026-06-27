@@ -2,7 +2,7 @@ resources:
   jobs:
     fpl_model_retrain:
       name: fpl_model_retrain
-      description: "Weekly LSTM retraining from Gold tables → MLflow → Model Serving promotion"
+      description: "Weekly LSTM retraining from Gold tables → MLflow → champion model promotion"
 
       schedule:
         quartz_cron_expression: "0 0 6 ? * MON *"
@@ -19,30 +19,13 @@ resources:
           notebook_task:
             notebook_path: ../notebooks/lstm_training.ipynb
             source: WORKSPACE
-          job_cluster_key: ml_cluster
-          libraries:
-            - pypi:
-                package: tensorflow>=2.20.0
-            - pypi:
-                package: scikit-learn>=1.7.2
-            - pypi:
-                package: mlflow>=2.0.0
+          environment_key: ml
 
-        - task_key: promote_champion_model
-          description: "Set 'champion' alias on the newly trained model version in Unity Catalog"
-          depends_on:
-            - task_key: lstm_training
-          notebook_task:
-            notebook_path: ../notebooks/lstm_training.ipynb
-            source: WORKSPACE
-          job_cluster_key: ml_cluster
-
-      job_clusters:
-        - job_cluster_key: ml_cluster
-          new_cluster:
-            spark_version: 15.4.x-scala2.12
-            node_type_id: Standard_DS3_v2
-            num_workers: 1
-            spark_env_vars:
-              MLFLOW_EXPERIMENT_NAME: "/fpl/lstm_points_predictor"
-              MODEL_NAME: "fpl.gold.lstm_points_predictor"
+      environments:
+        - environment_key: ml
+          spec:
+            client: "1"
+            dependencies:
+              - tensorflow>=2.20.0
+              - scikit-learn>=1.7.2
+              - mlflow>=2.0.0

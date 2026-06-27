@@ -11,11 +11,11 @@ resources:
 
       libraries:
         - glob:
-            include: ../src/bronze/*.py
+            include: ../src/bronze/**
         - glob:
-            include: ../src/silver/*.py
+            include: ../src/silver/**
         - glob:
-            include: ../src/gold/*.py
+            include: ../src/gold/**
 
       configuration:
         spark.databricks.delta.schema.autoMerge.enabled: "true"
