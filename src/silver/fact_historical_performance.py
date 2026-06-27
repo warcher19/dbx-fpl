@@ -8,6 +8,9 @@ from pyspark import pipelines as dp
 from pyspark.sql.functions import col, to_timestamp, when, lit
 
 
+@dp.expect_or_drop("valid_player_name", "player_name IS NOT NULL")
+@dp.expect_or_drop("valid_season",      "season IS NOT NULL")
+@dp.expect_or_drop("valid_gameweek",    "gameweek BETWEEN 1 AND 38")
 @dp.temporary_view()
 def historical_gw_stream():
     """
@@ -65,9 +68,6 @@ def historical_gw_stream():
     )
 
 
-@dp.expect_or_drop("valid_player_name", "player_name IS NOT NULL")
-@dp.expect_or_drop("valid_season", "season IS NOT NULL")
-@dp.expect_or_drop("valid_gameweek", "gameweek BETWEEN 1 AND 38")
 dp.create_streaming_table(
     name="fact_historical_performance",
     comment="Historical FPL gameweek performance from vaastav (2016-17 to 2024-25) — SCD Type 1",

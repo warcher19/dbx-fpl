@@ -2,6 +2,9 @@ from pyspark import pipelines as dp
 from pyspark.sql.functions import col, explode, to_timestamp
 
 
+@dp.expect_or_drop("valid_player",  "player_id IS NOT NULL")
+@dp.expect_or_drop("valid_fixture", "fixture_id IS NOT NULL")
+@dp.expect("valid_minutes",         "minutes >= 0 AND minutes <= 120")
 @dp.temporary_view()
 def element_history_stream():
     """
@@ -56,9 +59,6 @@ def element_history_stream():
     )
 
 
-@dp.expect_or_drop("valid_player", "player_id IS NOT NULL")
-@dp.expect_or_drop("valid_fixture", "fixture_id IS NOT NULL")
-@dp.expect("valid_minutes", "minutes >= 0 AND minutes <= 120")
 dp.create_streaming_table(
     name="fact_player_performance",
     comment="Current-season player performance per fixture — SCD Type 1",
