@@ -31,15 +31,24 @@ LANDING = Path("/Volumes/fpl/bronze/landing")
 
 
 def download_season(season: str) -> bytes | None:
-    url = f"{BASE_RAW_URL}/{season}/gws/merged_gws.csv"
-    try:
-        resp = requests.get(url, timeout=60)
-        resp.raise_for_status()
-        print(f"  Downloaded {season}: {len(resp.content):,} bytes")
-        return resp.content
-    except requests.RequestException as exc:
-        print(f"  WARNING: Failed to download {season}: {exc}")
-        return None
+    # Some seasons use merged_gws.csv, others (e.g. 2024-25) use merged_gw.csv
+    for filename in ("merged_gws.csv", "merged_gw.csv"):
+        url = f"{BASE_RAW_URL}/{season}/gws/{filename}"
+        try:
+            resp = requests.get(url, timeout=60)
+            resp.raise_for_status()
+            print(f"  Downloaded {season} ({filename}): {len(resp.content):,} bytes")
+            return resp.content
+        except requests.HTTPError as exc:
+            if exc.response.status_code == 404:
+                continue  # try the alternate filename
+            print(f"  WARNING: HTTP error for {season}/{filename}: {exc}")
+            return None
+        except requests.RequestException as exc:
+            print(f"  WARNING: Failed to download {season}/{filename}: {exc}")
+            return None
+    print(f"  WARNING: No merged gameweek file found for {season}")
+    return None
 
 
 def main():
