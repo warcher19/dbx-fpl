@@ -1,6 +1,9 @@
 bundle:
   name: dbx-fpl
 
+include:
+  - resources/*.yml
+
 variables:
   landing_volume_path:
     description: "UC Volume path used as the landing zone for API JSON and historical CSVs"
@@ -20,14 +23,3 @@ targets:
     mode: production
     workspace:
       profile: will-free-env
-
-resources:
-  pipelines:
-    fpl_medallion:
-      $ref: resources/fpl_pipeline.pipeline.yml
-
-  jobs:
-    fpl_api_ingestion:
-      $ref: resources/fpl_api_ingestion.job.yml
-    fpl_model_retrain:
-      $ref: resources/fpl_model_retrain.job.yml
