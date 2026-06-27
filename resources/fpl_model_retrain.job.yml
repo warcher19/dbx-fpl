@@ -19,13 +19,3 @@ resources:
           notebook_task:
             notebook_path: ../notebooks/lstm_training.ipynb
             source: WORKSPACE
-          environment_key: ml
-
-      environments:
-        - environment_key: ml
-          spec:
-            client: "1"
-            dependencies:
-              - tensorflow>=2.20.0
-              - scikit-learn>=1.7.2
-              - mlflow>=2.0.0
