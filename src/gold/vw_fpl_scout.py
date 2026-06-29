@@ -47,17 +47,19 @@ def vw_fpl_scout():
 
         upcoming_fixtures AS (
             -- Average FDR over the next 3 unplayed fixtures per team
+            -- Split into home/away unions so the optimizer can push down each join
             SELECT
                 p.full_name AS player_name,
-                ROUND(AVG(
-                    CASE WHEN p.team_id = f.home_team_id THEN f.home_difficulty
-                         ELSE f.away_difficulty
-                    END
-                ), 2) AS avg_upcoming_fdr,
+                ROUND(AVG(fdr), 2) AS avg_upcoming_fdr,
                 COUNT(*) AS upcoming_fixtures_count
             FROM fpl.gold.dim_player p
-            JOIN fpl.gold.dim_fixture f
-                ON (p.team_id = f.home_team_id OR p.team_id = f.away_team_id)
+            JOIN (
+                SELECT home_team_id AS team_id, home_difficulty AS fdr, gameweek, finished
+                FROM fpl.gold.dim_fixture
+                UNION ALL
+                SELECT away_team_id AS team_id, away_difficulty AS fdr, gameweek, finished
+                FROM fpl.gold.dim_fixture
+            ) f ON p.team_id = f.team_id
             JOIN latest_gw l ON f.gameweek > l.gw AND f.gameweek <= l.gw + 3
             WHERE f.finished = FALSE OR f.finished IS NULL
             GROUP BY p.full_name

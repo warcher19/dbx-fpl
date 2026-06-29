@@ -58,7 +58,6 @@ def historical_gw_stream():
             lit("vaastav").alias("data_source"),
             col("_ingestion_timestamp"),
         )
-        .filter(col("player_name").isNotNull() & col("season").isNotNull())
     )
 
 
