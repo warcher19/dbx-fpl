@@ -7,7 +7,7 @@ def bootstrap_teams_stream():
     """Explode teams array from bootstrap snapshot before CDC processing."""
     return (
         spark.readStream.table("fpl.bronze.bootstrap_static")
-        .select(explode("teams").alias("t"))
+        .select(explode("teams").alias("t"), col("_ingestion_timestamp"))
         .select(
             col("t.id").cast("long").alias("team_id"),
             col("t.name"),

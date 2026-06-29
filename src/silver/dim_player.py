@@ -7,7 +7,7 @@ def bootstrap_players_stream():
     """Explode elements array from bootstrap snapshot before CDC processing."""
     return (
         spark.readStream.table("fpl.bronze.bootstrap_static")
-        .select(explode("elements").alias("e"))
+        .select(explode("elements").alias("e"), col("_ingestion_timestamp"))
         .select(
             col("e.id").cast("long").alias("player_id"),
             col("e.first_name"),

@@ -5,7 +5,7 @@ CDC key is composite (player_name, season, gameweek) because vaastav CSVs have
 no integer player_id — names are the only cross-season identity available.
 """
 from pyspark import pipelines as dp
-from pyspark.sql.functions import col, to_timestamp, when, lit
+from pyspark.sql.functions import col, to_timestamp, lit
 
 
 @dp.expect_or_drop("valid_player_name", "player_name IS NOT NULL")
@@ -21,13 +21,7 @@ def historical_gw_stream():
         spark.readStream.table("fpl.bronze.historical_gw_raw")
         .select(
             col("name").alias("player_name"),
-            # Map element_type int → position label
-            when(col("element_type") == 1, "GK")
-            .when(col("element_type") == 2, "DEF")
-            .when(col("element_type") == 3, "MID")
-            .when(col("element_type") == 4, "FWD")
-            .otherwise(col("position"))
-            .alias("position"),
+            col("position"),
             col("team"),
             col("season"),
             col("round").cast("integer").alias("gameweek"),
